@@ -37,7 +37,9 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
         sort: $scope.accountFilter.sort,
         filter: $scope.accountFilter.filter,
       }).then(success => {
-        $scope.total = success.data.total;
+        // $scope.total = success.data.total;
+        if($state.current.name !== 'admin.account') { return; }
+        $scope.setFabNumber(success.data.total);
         if(!search && $scope.menuSearch.text) { return; }
         if(search && search !== $scope.menuSearch.text) { return; }
         success.data.account.forEach(f => {
@@ -80,6 +82,9 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
     $scope.setFabButton($scope.id === 1 ? () => {
       $state.go('admin.addAccount');
     } : null);
+    $scope.addAccount = () => {
+      $state.go('admin.addAccount');
+    };
     $scope.toAccount = account => {
       if(account.mac) {
         $state.go('admin.userPage', { userId: account.userId });
@@ -116,12 +121,13 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
     };
   }
 ])
-.controller('AdminAccountPageController', ['$scope', '$state', '$stateParams', '$http', '$mdMedia', '$q', 'adminApi', '$timeout', '$interval', 'qrcodeDialog', 'ipDialog', '$mdBottomSheet', 'wireGuardConfigDialog',
-  ($scope, $state, $stateParams, $http, $mdMedia, $q, adminApi, $timeout, $interval, qrcodeDialog, ipDialog, $mdBottomSheet, wireGuardConfigDialog) => {
+.controller('AdminAccountPageController', ['$scope', '$state', '$stateParams', '$http', '$mdMedia', '$q', 'adminApi', '$timeout', '$interval', 'qrcodeDialog', 'ipDialog', '$mdBottomSheet', 'wireGuardConfigDialog', '$filter', 'subscribeDialog',
+  ($scope, $state, $stateParams, $http, $mdMedia, $q, adminApi, $timeout, $interval, qrcodeDialog, ipDialog, $mdBottomSheet, wireGuardConfigDialog, $filter, subscribeDialog) => {
     $scope.setTitle('账号');
     $scope.setMenuButton('arrow_back', 'admin.account');
     $scope.accountId = +$stateParams.accountId;
     $scope.account = { port: '...' };
+    $scope.defaultTab = -1;
     $q.all([
       $http.get(`/api/admin/account/${ $scope.accountId }`),
       $http.get('/api/admin/server'),
@@ -145,10 +151,11 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
           }
         });
       }
-      $scope.getServerPortData($scope.servers[0], $scope.accountId);
+      $scope.defaultTab = $scope.servers.findIndex(e => e.id === $scope.account.idle);
+      if($scope.defaultTab < 0) { $scope.defaultTab = 0; }
+      $scope.getServerPortData($scope.servers[$scope.defaultTab], $scope.accountId);
       $scope.isMultiServerFlow = !!$scope.account.multiServerFlow;
-    }).catch(err => {
-      console.log(err);
+    }).catch((err) => {
       $state.go('admin.account');
     });
     let currentServerId;
@@ -415,16 +422,19 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
       });
     };
     $scope.clipboardSuccess = event => {
-      $scope.toast('二维码链接已复制到剪贴板');
+      $scope.toast($filter('translate')('二维码链接已复制到剪贴板'));
     };
     $scope.isWG = server => server.type === 'WireGuard';
     $scope.showWireGuard = (server, account) => {
       wireGuardConfigDialog.show(server, account);
     };
+    $scope.subscribe = accountId => {
+      subscribeDialog.show(accountId);
+    };
   }
 ])
-.controller('AdminAddAccountController', ['$scope', '$state', '$stateParams', '$http', '$mdBottomSheet', 'alertDialog', '$filter',
-  ($scope, $state, $stateParams, $http, $mdBottomSheet, alertDialog, $filter) => {
+.controller('AdminAddAccountController', ['$scope', '$state', '$http', '$mdBottomSheet', 'alertDialog', '$filter', 'setAccountServerDialog',
+  ($scope, $state, $http, $mdBottomSheet, alertDialog, $filter, setAccountServerDialog) => {
     $scope.setTitle('添加账号');
     $scope.setMenuButton('arrow_back', 'admin.account');
     $http.get('/api/admin/order').then(success => {
@@ -493,16 +503,16 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
       $scope.account.autoRemoveDelay = $filter('timeStr2Num')($scope.account.autoRemoveDelayStr);
       alertDialog.loading();
       $scope.account.flow = $filter('flowStr2Num')($scope.account.flowStr);
-      if($scope.account.server) {
-        $scope.servers.forEach(server => {
-          if($scope.account.server.indexOf(server.id) >= 0) {
-            $scope.account.accountServerObj[server.id] = true;
-          } else {
-            $scope.account.accountServerObj[server.id] = false;
-          }
-        });
-      }
-      const server = Object.keys($scope.account.accountServerObj).map(m => $scope.account.accountServerObj[m] ? +m : null).filter(f => f);
+      // if($scope.account.server) {
+      //   $scope.servers.forEach(server => {
+      //     if($scope.account.server.indexOf(server.id) >= 0) {
+      //       $scope.account.accountServerObj[server.id] = true;
+      //     } else {
+      //       $scope.account.accountServerObj[server.id] = false;
+      //     }
+      //   });
+      // }
+      // const server = Object.keys($scope.account.accountServerObj).map(m => $scope.account.accountServerObj[m] ? +m : null).filter(f => f);
       $http.post('/api/admin/account', {
         type: +$scope.account.type,
         orderId: $scope.account.fromOrder ? +$scope.account.orderId : 0,
@@ -514,10 +524,11 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
         autoRemove: $scope.account.autoRemove ? 1 : 0,
         autoRemoveDelay: $scope.account.autoRemoveDelay,
         multiServerFlow: $scope.account.multiServerFlow ? 1 : 0,
-        server: $scope.account.accountServer ? server : null,
+        server: $scope.account.server,
+        user: $scope.account.user,
       }).then(success => {
         alertDialog.show('添加账号成功', '确定');
-        $state.go('admin.account');
+        $state.go('admin.accountPage', { accountId: success.data.id });
       }).catch(() => {
         alertDialog.show('添加账号失败', '确定');
       });
@@ -541,17 +552,37 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
     $http.get('/api/admin/server').then(success => {
       $scope.servers = success.data;
     });
+    $scope.accountUser = {
+      search: '',
+      searchChange: function(search) {},
+      selectedItemChange: function(item) {
+        $scope.account.user = item ? item.id : null;
+      },
+      querySearch: function(search) {
+        return $http.get('/api/admin/user', { params: { pageSize: 5, group: -1, search, type: 'normal' }}).then(success => success.data.users);
+      }
+    };
+    $scope.setAccountServer = () => {
+      setAccountServerDialog.show($scope.account, $scope.servers);
+    };
+    const setServers = () => {
+      if(!$scope.account.accountServerObj) { return; }
+      const server = Object.keys($scope.account.accountServerObj).map(m => $scope.account.accountServerObj[m] ? +m : null).filter(f => f);
+      $scope.account.server = ($scope.account.accountServer && +$scope.account.type > 1) ? server : null;
+    };
+    $scope.$watch('account.accountServerObj', () => {
+      setServers();
+    }, true);
+    $scope.$watch('account.accountServer', () => {
+      setServers();
+    }, true);
   }
 ])
-.controller('AdminEditAccountController', ['$scope', '$state', '$stateParams', '$http', '$mdBottomSheet', 'confirmDialog', 'alertDialog', '$filter', '$q',
-  ($scope, $state, $stateParams, $http, $mdBottomSheet, confirmDialog, alertDialog, $filter, $q) => {
+.controller('AdminEditAccountController', ['$scope', '$state', '$stateParams', '$http', '$mdBottomSheet', 'confirmDialog', 'alertDialog', '$filter', '$q', 'setAccountServerDialog',
+  ($scope, $state, $stateParams, $http, $mdBottomSheet, confirmDialog, alertDialog, $filter, $q, setAccountServerDialog) => {
     $scope.setTitle('编辑账号');
     $scope.setMenuButton('arrow_back', function() {
       $state.go('admin.accountPage', { accountId: $stateParams.accountId });
-    });
-    $http.get('/api/admin/order').then(success => {
-      $scope.orders = success.data.filter(f => !f.baseId);
-      $scope.account.orderId = success.data[0].id;
     });
     $scope.typeList = [
       {key: '不限量', value: 1},
@@ -615,7 +646,10 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
     $q.all([
       $http.get('/api/admin/server'),
       $http.get(`/api/admin/account/${ accountId }`),
+      $http.get('/api/admin/order'),
     ]).then(success => {
+      $scope.orders = success[2].data.filter(f => !f.baseId);
+      $scope.account.orderId = success[2].data[0].id;
       $scope.servers = success[0].data;
       $scope.account.type = success[1].data.type;
       if(success[1].data.orderId) {
@@ -657,7 +691,6 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
       $scope.account.autoRemoveDelay = $filter('timeStr2Num')($scope.account.autoRemoveDelayStr);
       alertDialog.loading();
       $scope.account.flow = $filter('flowStr2Num')($scope.account.flowStr);
-      const server = Object.keys($scope.account.accountServerObj).map(m => $scope.account.accountServerObj[m] ? +m : null).filter(f => f);
       $http.put(`/api/admin/account/${ accountId }/data`, {
         type: +$scope.account.type,
         orderId: $scope.account.fromOrder ? +$scope.account.orderId : 0,
@@ -670,7 +703,7 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
         autoRemove: $scope.account.autoRemove ? 1 : 0,
         autoRemoveDelay: $scope.account.autoRemoveDelay,
         multiServerFlow: $scope.account.multiServerFlow ? 1 : 0,
-        server: $scope.account.accountServer ? server : null,
+        server: $scope.account.server,
       }).then(success => {
         alertDialog.show('修改账号成功', '确定');
         $state.go('admin.accountPage', { accountId: $stateParams.accountId });
@@ -708,5 +741,19 @@ app.controller('AdminAccountController', ['$scope', '$state', '$mdMedia', '$http
         $state.go('admin.account');
       });
     };
+    $scope.setAccountServer = () => {
+      setAccountServerDialog.show($scope.account, $scope.servers);
+    };
+    const setServers = () => {
+      if(!$scope.account.accountServerObj) { return; }
+      const server = Object.keys($scope.account.accountServerObj).map(m => $scope.account.accountServerObj[m] ? +m : null).filter(f => f);
+      $scope.account.server = ($scope.account.accountServer && +$scope.account.type > 1) ? server : null;
+    };
+    $scope.$watch('account.accountServerObj', () => {
+      setServers();
+    }, true);
+    $scope.$watch('account.accountServer', () => {
+      setServers();
+    }, true);
   }
 ]);

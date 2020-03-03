@@ -5,9 +5,16 @@ const dns = require('dns');
 const net = require('net');
 const crypto = require('crypto');
 const config = appRequire('services/config').all();
-const host = config.manager.address.split(':')[0];
-const port = +config.manager.address.split(':')[1];
-const password = config.manager.password;
+let host;
+let port;
+let password;
+try {
+  host = config.manager.address.split(':')[0];
+  port = +config.manager.address.split(':')[1];
+  password = config.manager.password;
+} catch(err) {
+
+}
 
 const pack = (data, password) => {
   const message = JSON.stringify(data);
@@ -31,12 +38,12 @@ const checkData = async (receive) => {
   const buffer = receive.data;
   let length = 0;
   let data;
-  if (buffer.length < 2) {
+  if (buffer.length < 4) {
     return;
   }
-  length = buffer[0] * 256 + buffer[1];
-  if (buffer.length >= length + 2) {
-    data = buffer.slice(2, length + 2);
+  length = buffer[0] * 256 * 256 * 256 + buffer[1] * 256 * 256 + buffer[2] * 256 + buffer[3];
+  if (buffer.length >= length + 4) {
+    data = buffer.slice(4, length + 4);
     const message = JSON.parse(data.toString());
     return message;
   } else {
@@ -146,7 +153,17 @@ const send = async (data, options) => {
           successMark = false;
         }
       });
-      ret.version = versions.join(',');
+      if(versions.length === 1) {
+        ret.version = versions[0];
+      } else {
+        const diff = versions.some((ele, index, arr) => index > 0 && ele !== arr[index - 1]);
+        if(diff) {
+          ret.version = versions.join(',');
+        } else {
+          ret.version = versions[0] + ' x ' + versions.length;
+        }
+      }
+      ret.number = versions.length;
       return successMark ? ret : Promise.reject();
     } else if(data.command === 'flow') {
       let successMark = false;

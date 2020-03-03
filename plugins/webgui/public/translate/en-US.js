@@ -24,6 +24,8 @@ module.exports = {
   '取消': 'Cancel',
   '关闭': 'Close',
   '下一步': 'Next',
+  '无效': 'not valid',
+  '已发送': 'has been sent',
 
   '服务器': 'Servers',
   '用户': 'Users',
@@ -48,6 +50,9 @@ module.exports = {
   '最近连接：': 'Last Connected:',
   '备注：': 'Comments:',
   '修改密码': 'Change Password',
+  '绑定Telegram': 'Binding Telegram',
+  '邀请码': 'Referral code',
+  'mac地址': 'MAC Address',
   '修改密码成功': 'Change password success',
   '修改密码失败': 'Change password fail',
   '续费': 'Recharge',
@@ -66,6 +71,9 @@ module.exports = {
   '一个月': '1 month',
   '三个月': '3 months',
   '一年': '1 year',
+  '时': 'Hour',
+  '天': 'Day',
+  '周': 'Week',
   '支付宝扫码支付': 'Alipay QR code Payment',
   '手机请点击二维码付款': 'On your smartphone, please click the QR code to pay',
   'PayPal支付请点击下面按钮': 'For PayPal users, please click the following button',
@@ -87,14 +95,16 @@ module.exports = {
 
   '基本设置': 'Basic Settings',
   '公告管理': 'Announcement Management',
+  '群组管理': 'Group Management',
   '支付设置': 'Payment Configuration',
+  '订单设置': 'Order Configuration',
   '邮件设置': 'Email Configuration',
   '账号设置': 'Account Configuration',
 
   '用户注册失败': 'Registration failed',
   '网络异常，请稍后再试': 'Network failure. Please try again later.',
   '用户名或密码错误': 'Incorrect username or password.',
-  '该用户尚未注册的': 'No such user',
+  '该用户尚未注册': 'No such user',
   '请输入正确的用户名格式': 'Invalid username.',
   '密码重试次数已达上限\n请稍后再试': 'Too many login attempts.\n Please try again later.',
   '验证码发送错误': 'Unable to send verification code.',
@@ -115,6 +125,7 @@ module.exports = {
   '修改': 'Modify',
 
   '网站标题': 'Website Title',
+  '网站短标题': 'Website Short Title',
   '使用Service Worker缓存静态页面': 'Use ServiceWorker to create a static cache page',
   '新用户自动分配账号': 'New User Gets Auto-Allocation Account',
   '随机分配端口号': 'Random Port',
@@ -138,4 +149,53 @@ module.exports = {
   '流量(MB)': 'Data Usage(MB)',
 
   '接收消息推送': 'Receive push message',
+  '主题颜色': 'Theme Color',
+  '主题第二颜色': 'Secondary Theme Color',
+
+  '全部': 'All',
+  '可用': 'Available',
+  '停止': 'Stopped',
+  '在线': 'Online',
+
+  // /home/login
+  '社交账号登录': 'Social Login',
+  '必须填写一个有效邮箱地址': 'Please enter a valid email address',
+  '该用户尚未注册': 'User does not exist',
+  '用户名或密码错误': 'Invalid username or password',
+  '重置密码链接已发至您的邮箱，\n请注意查收': 'Password email has been sent to your mailbox.\nPlease check.',
+
+  // /admin/addAccount
+  '从订单中选择类型': 'Select type from orders',
+  '自动删除延迟': 'Auto deletion delay',
+  
+  // /admin/addUser
+  '普通用户': 'Normal User',
+
+  // /admin/server/*/edit
+  '立即同步所有端口': 'Sync all ports now',
+
+  // /admin/user
+  '排序方式：': 'Sorting:',
+  '用户ID': 'User ID',
+  '上次登录': 'Last Login',
+  '用户类型': 'User Type',
+  '普通': 'User',
+  '管理员': 'Admin',
+  '分组': 'Group',
+  '所有组': 'All Groups',
+
+  // /admin/settings
+  '点击进入': 'Click to Edit',
+  '名称': 'Server Name',
+  '备注': 'Remarks',
+  '地址': 'Address',
+  '端口': 'Port',
+  '密码': 'Password',
+  '加密方式': 'Encryption Method',
+  '流量倍率': 'Traffic Multiplier',
+
+  '取消': 'Cancel',
+  '删除': 'Delete',
+  '确认': 'Confirm',
+  '确定': 'Confirm',
 };

@@ -30,7 +30,7 @@ server {
   ssl_certificate_key    /xxx/domain.key;
   location / {
       proxy_set_header   X-Real-IP        $remote_addr;
-      proxy_set_heade    Host             $http_host;
+      proxy_set_header   Host             $http_host;
       proxy_set_header   X-Frame-Options  DENY;
       proxy_pass         http://127.0.0.1:8080;
   }
@@ -66,7 +66,32 @@ email:
   apiKey: 'key-f1e6a7558c7c5a37a33fdba53a87ea82'
 ```
 
-!> mailgun 每月都有一定的免费额度，需绑定信用卡
+## 使用 sendgrid 发送邮件
+
+将配置文件的 email 部分替换成下面的格式：
+
+```yaml
+email:
+  type: 'sendgrid'
+  name: 'ssmgr'
+  email: 'admin@your.domain.com'
+  apiKey: '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'
+```
+
+# 转发 smtp 协议
+
+对于一些不支持 smtp 协议的 VPS，可通过代理转发的方式转到一台支持的 VPS 上面去发邮件，加上一个`proxy`参数即可：
+
+```yaml
+plugins:
+  email:
+    use: true
+    type: 'smtp'
+    username: 'username'
+    password: 'password'
+    host: 'smtp.your-email.com'
+    proxy: 'socks://127.0.0.1:1234/'
+```
 
 # 随节点运行 shadowsocks
 
@@ -98,17 +123,34 @@ plugins:
     icon: 'icon.png'
 ```
 
-# 转发 smtp 协议
+# 使用充值码功能
 
-对于一些不支持 smtp 协议的 VPS，可通过代理转发的方式转到一台支持的 VPS 上面去发邮件，加上一个`proxy`参数即可：
+在配置文件中加上 giftcard 插件即可：
 
 ```yaml
 plugins:
-  email:
+  giftcard:
     use: true
-    type: 'smtp'
-    username: 'username'
-    password: 'password'
-    host: 'smtp.your-email.com'
-    proxy: 'socks://127.0.0.1:1234/'
+```
+
+# 使用 Telegram Bot
+
+使用该插件后，管理员和用户都能够绑定 Telegram 账号，管理员可以实时收到用户注册和付费提醒，普通用户每天早上可以收到昨日流量统计。
+
+从[@BotFather](https://telegram.me/BotFather)申请一个bot，然后在配置文件中加上 webgui_telegram 插件：
+
+```yaml
+webgui_telegram:
+  use: true
+  token: '191374681:AAw6RaVHR4nnP7T4Ct4a8QX-XyFQ5W53wmZ'
+```
+
+# 增加 Crisp 客服
+
+增加该插件后，用户登陆后的首页会增加一个“客服咨询”入口。
+
+```yaml
+webgui_crisp:
+  use: true
+  websiteId: '6d8e3987-ec62-08b2-80a1-b3c776ad371c'
 ```

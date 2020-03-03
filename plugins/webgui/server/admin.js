@@ -15,6 +15,7 @@ const macAccount = appRequire('plugins/macAccount/index');
 const refOrder = appRequire('plugins/webgui_ref/order');
 const refUser = appRequire('plugins/webgui_ref/user');
 const flowPack = appRequire('plugins/webgui_order/flowPack');
+const accountFlow = appRequire('plugins/account/accountFlow');
 
 exports.getAccount = (req, res) => {
   const group = req.adminInfo.id === 1 ? -1 : req.adminInfo.group;
@@ -107,6 +108,19 @@ exports.getOneAccount = async (req, res) => {
         accountInfo.publicKey = accountInfo.key;
       }
     }
+    await accountFlow.edit(accountInfo.id);
+
+    const onlines = await account.getOnlineAccount();
+    const serversWithoutWireGuard = await knex('server').select(['id']).where({ type: 'Shadowsocks' }).then(s => s.map(m => m.id));
+    accountInfo.idle = serversWithoutWireGuard.filter(server => {
+      if(accountInfo.server) {
+        return accountInfo.server.includes(server);
+      }
+      return true;
+    }).sort((a, b) => {
+      return (onlines[a] || 0)  - (onlines[b] || 0);
+    })[0];
+
     return res.send(accountInfo);
   } catch(err) {
     console.log(err);
@@ -131,13 +145,15 @@ exports.addAccount = (req, res) => {
       const autoRemoveDelay = +req.body.autoRemoveDelay || 0;
       const multiServerFlow = +req.body.multiServerFlow || 0;
       const server = req.body.server ? JSON.stringify(req.body.server) : null;
+      const user = req.body.user || null;
       return account.addAccount(type, {
         port, password, time, limit, flow, autoRemove, autoRemoveDelay, server, multiServerFlow, orderId,
+        user,
       });
     }
     result.throw();
   }).then(success => {
-    res.send('success');
+    res.send({ id: success });
   }).catch(err => {
     console.log(err);
     res.status(403).end();
@@ -586,7 +602,7 @@ exports.getAccountIpInfo = (req, res) => {
       if(success.code !== 0) {
         return Promise.reject(success.code);
       }
-      const result = [success.data.region + success.data.city, success.data.isp];
+      const result = [success.data.region + (success.data.region === success.data.city ? '' : success.data.city), success.data.isp];
       return result;
     });
   };

@@ -1,5 +1,6 @@
 const manager = appRequire('services/manager');
 const serverManager = appRequire('plugins/flowSaver/server');
+const webguiTag = appRequire('plugins/webgui_tag');
 const knex = appRequire('init/knex').knex;
 
 exports.getServers = (req, res) => {
@@ -52,7 +53,7 @@ exports.addServer = async (req, res) => {
     req.checkBody('scale', 'Invalid scale').notEmpty();
     req.checkBody('shift', 'Invalid shift').isInt();
     const result = await req.getValidationResult();
-    if(!result.isEmpty()) { return Promise.reject('Invalid Body'); }
+    if(!result.isEmpty()) { return Promise.reject(result.array()); }
     const type = req.body.type;
     const isWG = type === 'WireGuard';
     const name = req.body.name;
@@ -74,7 +75,7 @@ exports.addServer = async (req, res) => {
       port,
       password,
     });
-    await serverManager.add({
+    const [ serverId ] = await serverManager.add({
       type,
       name,
       host: address,
@@ -88,7 +89,7 @@ exports.addServer = async (req, res) => {
       net,
       wgPort,
     });
-    res.send('success');
+    res.send({ serverId });
   } catch(err) {
     console.log(err);
     res.status(403).end();
@@ -106,7 +107,7 @@ exports.editServer = async (req, res) => {
     req.checkBody('scale', 'Invalid scale').notEmpty();
     req.checkBody('shift', 'Invalid shift').isInt();
     const result = await req.getValidationResult();
-    if(!result.isEmpty()) { return Promise.reject('Invalid Body'); }
+    if(!result.isEmpty()) { return Promise.reject(result.array()); }
     const serverId = req.params.serverId;
     const type = req.body.type;
     const isWG = type === 'WireGuard';
@@ -151,59 +152,6 @@ exports.editServer = async (req, res) => {
     console.log(err);
     res.status(403).end();
   }
-
-
-  // req.checkBody('name', 'Invalid name').notEmpty();
-  // req.checkBody('address', 'Invalid address').notEmpty();
-  // req.checkBody('port', 'Invalid port').isInt({min: 1, max: 65535});
-  // req.checkBody('password', 'Invalid password').notEmpty();
-  // req.checkBody('method', 'Invalid method').notEmpty();
-  // req.checkBody('scale', 'Invalid scale').notEmpty();
-  // req.checkBody('shift', 'Invalid shift').isInt();
-  // req.getValidationResult().then(result => {
-  //   if(result.isEmpty()) {
-  //     const address = req.body.address;
-  //     const port = +req.body.port;
-  //     const password = req.body.password;
-  //     return manager.send({
-  //       command: 'flow',
-  //       options: { clear: false, },
-  //     }, {
-  //       host: address,
-  //       port,
-  //       password,
-  //     });
-  //   }
-  //   result.throw();
-  // }).then(success => {
-  //   const serverId = req.params.serverId;
-  //   const name = req.body.name;
-  //   const comment = req.body.comment;
-  //   const address = req.body.address;
-  //   const port = +req.body.port;
-  //   const password = req.body.password;
-  //   const method = req.body.method;
-  //   const scale = req.body.scale;
-  //   const shift = req.body.shift;
-  //   const check = +req.body.check;
-  //   return serverManager.edit({
-  //     id: serverId,
-  //     name,
-  //     host: address,
-  //     port,
-  //     password,
-  //     method,
-  //     scale,
-  //     comment,
-  //     shift,
-  //     check,
-  //   });
-  // }).then(success => {
-  //   res.send('success');
-  // }).catch(err => {
-  //   console.log(err);
-  //   res.status(403).end();
-  // });
 };
 
 exports.deleteServer = (req, res) => {
@@ -215,4 +163,29 @@ exports.deleteServer = (req, res) => {
     console.log(err);
     res.status(403).end();
   });
+};
+
+exports.getTags = async (req, res) => {
+  try {
+    const type = req.query.type;
+    const key = +req.query.key;
+    const tags = await webguiTag.getTags(type, key);
+    res.send(tags);
+  } catch(err) {
+    console.log(err);
+    res.status(403).end();
+  }
+};
+
+exports.setTags = async (req, res) => {
+  try {
+    const type = req.body.type;
+    const key = +req.body.key;
+    const tags = req.body.tags;
+    await webguiTag.setTags(type, key, tags);
+    res.send('success');
+  } catch(err) {
+    console.log(err);
+    res.status(403).end();
+  }
 };

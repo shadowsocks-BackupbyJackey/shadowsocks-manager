@@ -3,7 +3,7 @@ const gulp = require('gulp');
 const path = require('path');
 const webpackStream = require('webpack-stream');
 const concat = require('gulp-concat');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const cleanCSS = require('gulp-clean-css');
 
 gulp.task('clean', () => {
@@ -68,11 +68,7 @@ gulp.task('webguiBuild', () => {
                 '@babel/env', {
                   targets: {
                     browsers: [
-                      'Chrome >= 57',
-                      'FireFox >= 50',
-                      'Safari >= 7',
-                      'ie >= 9',
-                      'last 4 Edge versions'
+                      'last 3 versions'
                     ]
                   }
                 }
@@ -83,9 +79,11 @@ gulp.task('webguiBuild', () => {
       }]
     },
     optimization: {
-      minimizer: [new UglifyJsPlugin()],
+      minimize: true,
+      minimizer: [new TerserPlugin()],
     },
     mode: 'production',
+    performance: { hints: false },
   }))
   .pipe(gulp.dest('plugins/webgui/libs'));
 });

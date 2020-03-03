@@ -181,14 +181,23 @@ const checkPort = async () => {
 checkPort();
 cron.minute(() => {
   checkPort();
-}, 1);
+}, 'FreeAccountCheckPort', 1);
 
 const path = require('path');
 const express = require('express');
+const session = require('express-session');
+const sessionParser = session({
+  secret: '8d24f7b0d358a923',
+  rolling: true,
+  resave: true,
+  saveUninitialized: true,
+  cookie: { secure: true, httpOnly: true, maxAge: 7 * 24 * 3600 * 1000 },
+});
 const app = express();
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(sessionParser);
 app.engine('.html', require('ejs').__express);
 app.set('view engine', 'html');
 app.set('views', path.resolve('./plugins/freeAccount/views'));
@@ -196,6 +205,13 @@ app.set('trust proxy', 'loopback');
 app.use('/libs', express.static(path.resolve('./plugins/freeAccount/libs')));
 const listenPort = config.plugins.freeAccount.listen.split(':')[1];
 const listenHost = config.plugins.freeAccount.listen.split(':')[0];
+
+if(config.plugins.freeAccount.ad) {
+  app.get('/ads.txt', (req, res) => {
+    return res.send(`google.com, pub-${ config.plugins.freeAccount.ad.client.split('pub-')[1] }, DIRECT, f08c47fec0942fa0`);
+  });
+}
+
 app.get('/', (req, res) => {
   logger.info(`[${ req.ip }] /`);
   qrcode = 'ss://' + Buffer.from(`${ method }:${ currentPassword }@${ address }:${ currentPort }`).toString('base64');
@@ -208,9 +224,10 @@ app.get('/', (req, res) => {
     adSlot: config.plugins.freeAccount.ad && config.plugins.freeAccount.ad.slot,
   });
 });
+
 app.post('/qrcode', async (req, res) => {
   const token = req.body.token;
-  const ip = req.ip;
+  const ip = req.headers['x-real-ip'] || req.ip;
   let recaptchaResult = {
     success: true,
     score: 1,

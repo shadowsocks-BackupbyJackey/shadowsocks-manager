@@ -6,6 +6,7 @@
 
 * 进阶
   * [高级配置](/advanced)
+  * [WireGuard节点](/wireguard)
   * [支付](/pay)
   * [首页皮肤](/skin)
 
@@ -22,5 +23,6 @@
   * [manager API](/managerapi)
   * [ssmgr API](/ssmgrapi)
 
+* [翻译](/translate)
 * [VPS推荐](/vps)
 * [捐赠](/donate)

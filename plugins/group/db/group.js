@@ -8,7 +8,6 @@ const addDefaultGroup = async () => {
   if (!data) {
     const id = await knex('group').insert(
       { id: 0, name: '默认组', comment: '系统默认分组' },
-      'id',
     );
     if (id[0] !== 0) {
       await knex('group')
@@ -24,24 +23,9 @@ const createTable = async () => {
   if (exist) {
     await addDefaultGroup();
     const hasShowNotice = await knex.schema.hasColumn(tableName, 'showNotice');
-    if (!hasShowNotice) {
+    if(hasShowNotice) {
       await knex.schema.table(tableName, function(table) {
-        table.integer('showNotice').defaultTo(1);
-      });
-    }
-    const hasOrder = await knex.schema.hasColumn(tableName, 'order');
-    if (!hasOrder) {
-      await knex.schema.table(tableName, function(table) {
-        table.string('order');
-      });
-    }
-    const hasMultiAccount = await knex.schema.hasColumn(
-      tableName,
-      'multiAccount',
-    );
-    if (!hasMultiAccount) {
-      await knex.schema.table(tableName, function(table) {
-        table.integer('multiAccount').defaultTo(0);
+        table.dropColumn('showNotice');
       });
     }
     return;
@@ -50,7 +34,6 @@ const createTable = async () => {
     table.increments('id');
     table.string('name');
     table.string('comment');
-    table.integer('showNotice').defaultTo(1);
     table.string('order');
     table.integer('multiAccount').defaultTo(0);
   });
